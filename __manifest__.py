@@ -1,6 +1,6 @@
 {
     'name': 'Stock Kanban Redesign',
-    'version': '17.0.1.0.0',
+    'version': '19.0.1.0.0',
     'summary': 'Rediseño visual del dashboard kanban de operaciones de inventario',
     'category': 'Inventory',
     'depends': ['stock'],
