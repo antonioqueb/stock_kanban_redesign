@@ -76,10 +76,13 @@ const DYNAMIC_CSS = `
 }
 .o_stock_kanban .o_kanban_renderer,
 .o_stock_kanban .o_renderer {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
     padding: 24px !important;
     gap: 20px !important;
-    align-items: flex-start !important;
-    flex-wrap: wrap !important;
+    align-items: start !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
 }
 
 /* ── Tarjeta ────────────────────────────────────────────────────────────────── */
@@ -90,9 +93,9 @@ const DYNAMIC_CSS = `
     box-shadow: var(--sk-shadow) !important;
     transition: transform var(--sk-ease), box-shadow var(--sk-ease), border-color var(--sk-ease) !important;
     overflow: visible !important;
-    width: 320px !important;
-    min-width: 320px !important;
-    max-width: 320px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
     position: relative !important;
     padding: 0 !important;
     font-family: 'Plus Jakarta Sans', sans-serif !important;
@@ -457,8 +460,9 @@ const DYNAMIC_CSS = `
 
 /* ── Ghost ───────────────────────────────────────────────────────────────────── */
 .o_stock_kanban .o_kanban_ghost {
-    min-width: 320px !important;
-    max-width: 320px !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
 }
 `;
 
