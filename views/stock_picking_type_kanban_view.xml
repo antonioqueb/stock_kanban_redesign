@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Herencia de la vista kanban de tipos de operación de inventario -->
     <record id="stock_picking_type_kanban_redesign" model="ir.ui.view">
         <field name="name">stock.picking.type.kanban.redesign</field>
         <field name="model">stock.picking.type</field>
@@ -8,13 +7,13 @@
         <field name="priority">20</field>
         <field name="arch" type="xml">
             <!--
-                Añadimos count_picking_late al kanban para usarlo en JS.
-                Si ya existe en la vista base, este xpath se puede eliminar.
+                Exponemos el campo 'code' en el kanban para que el JS
+                pueda leerlo y asignar el color/icono correcto por tipo.
+                Si Odoo 19 ya lo incluye en la vista base, este xpath
+                simplemente no cambia nada.
             -->
-            <xpath expr="//field[@name='count_move_ready']" position="after">
-                <field name="count_picking_late" invisible="1"/>
-                <field name="count_picking_waiting" invisible="1"/>
-                <field name="count_picking_backorders" invisible="1"/>
+            <xpath expr="//field[@name='color']" position="after">
+                <field name="code" invisible="1"/>
             </xpath>
         </field>
     </record>
