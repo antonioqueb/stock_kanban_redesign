@@ -1,0 +1,411 @@
+/* =============================================
+   STOCK KANBAN REDESIGN - Alphaqueb Consulting
+   ============================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+
+/* ---- Variables ---- */
+:root {
+    --sk-bg: #0f1117;
+    --sk-surface: #1a1d27;
+    --sk-surface-2: #22263a;
+    --sk-border: rgba(255,255,255,0.07);
+    --sk-border-hover: rgba(255,255,255,0.15);
+    --sk-accent-incoming: #00d4aa;
+    --sk-accent-outgoing: #ff6b6b;
+    --sk-accent-internal: #7c8ef7;
+    --sk-accent-default: #f0c040;
+    --sk-text-primary: #eef0f8;
+    --sk-text-secondary: #8b8fa8;
+    --sk-text-muted: #525670;
+    --sk-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    --sk-shadow-hover: 0 16px 48px rgba(0,0,0,0.6);
+    --sk-radius: 18px;
+    --sk-radius-sm: 10px;
+    --sk-transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ---- Kanban Board Container ---- */
+.o_stock_kanban .o_kanban_renderer {
+    background: var(--sk-bg) !important;
+    padding: 24px !important;
+    gap: 20px !important;
+    min-height: 100vh;
+    font-family: 'DM Sans', sans-serif !important;
+}
+
+/* ---- Kanban Card ---- */
+.o_stock_kanban .o_kanban_card {
+    background: var(--sk-surface) !important;
+    border: 1px solid var(--sk-border) !important;
+    border-radius: var(--sk-radius) !important;
+    box-shadow: var(--sk-shadow) !important;
+    transition: transform var(--sk-transition), box-shadow var(--sk-transition), border-color var(--sk-transition) !important;
+    overflow: hidden !important;
+    min-width: 280px !important;
+    max-width: 320px !important;
+    position: relative;
+    cursor: default;
+}
+
+.o_stock_kanban .o_kanban_card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--sk-accent-default);
+    transition: height var(--sk-transition), opacity var(--sk-transition);
+    opacity: 0.8;
+    z-index: 1;
+}
+
+/* Accent line por tipo de operación */
+.o_stock_kanban .o_kanban_card[data-operation-type="incoming"]::before { background: var(--sk-accent-incoming); }
+.o_stock_kanban .o_kanban_card[data-operation-type="outgoing"]::before { background: var(--sk-accent-outgoing); }
+.o_stock_kanban .o_kanban_card[data-operation-type="internal"]::before { background: var(--sk-accent-internal); }
+
+.o_stock_kanban .o_kanban_card:hover {
+    transform: translateY(-4px) !important;
+    box-shadow: var(--sk-shadow-hover) !important;
+    border-color: var(--sk-border-hover) !important;
+}
+
+.o_stock_kanban .o_kanban_card:hover::before {
+    height: 4px;
+    opacity: 1;
+}
+
+/* ---- Card Content Area ---- */
+.o_stock_kanban .o_kanban_card_content {
+    padding: 22px 22px 18px !important;
+    background: transparent !important;
+}
+
+/* Stock picking container */
+[name="stock_picking"] {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+/* ---- Card Header ---- */
+[name="stock_picking"] > a.o_field_widget,
+[name="stock_picking"] > a {
+    text-decoration: none !important;
+}
+
+[name="stock_picking"] .o_field_widget.fw-bold.fs-4,
+[name="stock_picking"] .fw-bold.fs-4 {
+    font-family: 'DM Sans', sans-serif !important;
+    font-size: 1.05rem !important;
+    font-weight: 700 !important;
+    color: var(--sk-text-primary) !important;
+    letter-spacing: -0.3px;
+    line-height: 1.3;
+    display: block;
+    margin-bottom: 4px;
+}
+
+/* ---- Warehouse badge ---- */
+[name="stock_picking"] .o_field_widget[name="warehouse_id"] {
+    display: inline-block !important;
+}
+
+[name="stock_picking"] .o_field_widget[name="warehouse_id"] .o_field_char,
+[name="stock_picking"] [name="warehouse_id"] span {
+    font-family: 'Space Mono', monospace !important;
+    font-size: 0.65rem !important;
+    font-weight: 400;
+    color: var(--sk-text-muted) !important;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    background: var(--sk-surface-2);
+    padding: 2px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--sk-border);
+}
+
+/* ---- Stats Row ---- */
+[name="stock_picking"] .row.mt-3 {
+    margin-top: 20px !important;
+    align-items: flex-start;
+    gap: 12px;
+    flex-wrap: nowrap;
+}
+
+/* ---- CTA Button (Ready/Open) ---- */
+[name="stock_picking"] .btn.btn-primary {
+    background: linear-gradient(135deg, var(--sk-accent-default), #e0a820) !important;
+    border: none !important;
+    border-radius: var(--sk-radius-sm) !important;
+    color: #0f1117 !important;
+    font-family: 'DM Sans', sans-serif !important;
+    font-size: 0.78rem !important;
+    font-weight: 700 !important;
+    padding: 10px 14px !important;
+    width: 100% !important;
+    text-align: center !important;
+    transition: all var(--sk-transition) !important;
+    box-shadow: 0 4px 12px rgba(240,192,64,0.25) !important;
+    letter-spacing: 0.2px;
+    line-height: 1.4 !important;
+    white-space: normal !important;
+}
+
+/* Incoming button */
+.o_stock_kanban .o_kanban_card[data-operation-type="incoming"] .btn.btn-primary {
+    background: linear-gradient(135deg, var(--sk-accent-incoming), #00b894) !important;
+    box-shadow: 0 4px 12px rgba(0,212,170,0.25) !important;
+}
+/* Outgoing button */
+.o_stock_kanban .o_kanban_card[data-operation-type="outgoing"] .btn.btn-primary {
+    background: linear-gradient(135deg, var(--sk-accent-outgoing), #ee5a24) !important;
+    box-shadow: 0 4px 12px rgba(255,107,107,0.25) !important;
+}
+/* Internal button */
+.o_stock_kanban .o_kanban_card[data-operation-type="internal"] .btn.btn-primary {
+    background: linear-gradient(135deg, var(--sk-accent-internal), #5f72e4) !important;
+    box-shadow: 0 4px 12px rgba(124,142,247,0.25) !important;
+}
+
+[name="stock_picking"] .btn.btn-primary:hover {
+    transform: scale(1.03) !important;
+    filter: brightness(1.1) !important;
+}
+
+[name="stock_picking"] .btn.btn-primary .o_field_integer {
+    font-size: 1.3rem !important;
+    font-family: 'Space Mono', monospace !important;
+    display: block;
+    margin-bottom: 2px;
+}
+
+/* ---- Stats Links (Waiting, Late, Backorders, Operations) ---- */
+.stock-overview-links {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 6px !important;
+    padding-left: 4px !important;
+}
+
+.stock-overview-links .row {
+    margin: 0 !important;
+}
+
+.stock-overview-links a {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    text-decoration: none !important;
+    color: var(--sk-text-secondary) !important;
+    font-size: 0.75rem !important;
+    font-weight: 500 !important;
+    padding: 5px 8px !important;
+    border-radius: 6px !important;
+    transition: all var(--sk-transition) !important;
+    border: 1px solid transparent !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    flex: none !important;
+    /* override bootstrap offset */
+    margin-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+.stock-overview-links a:hover {
+    background: var(--sk-surface-2) !important;
+    border-color: var(--sk-border) !important;
+    color: var(--sk-text-primary) !important;
+}
+
+.stock-overview-links a .row {
+    display: flex !important;
+    width: 100% !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+}
+
+.stock-overview-links a span {
+    font-size: 0.73rem !important;
+}
+
+/* Waiting */
+.stock-overview-links a[name="get_action_picking_tree_waiting"] {
+    color: #f0c040 !important;
+}
+.stock-overview-links a[name="get_action_picking_tree_waiting"]:hover {
+    background: rgba(240,192,64,0.08) !important;
+    border-color: rgba(240,192,64,0.2) !important;
+}
+
+/* Late */
+.stock-overview-links a[name="get_action_picking_tree_late"] {
+    color: #ff6b6b !important;
+}
+.stock-overview-links a[name="get_action_picking_tree_late"]:hover {
+    background: rgba(255,107,107,0.08) !important;
+    border-color: rgba(255,107,107,0.2) !important;
+}
+
+/* Backorders */
+.stock-overview-links a[name="get_action_picking_tree_backorder"] {
+    color: #fd9644 !important;
+}
+.stock-overview-links a[name="get_action_picking_tree_backorder"]:hover {
+    background: rgba(253,150,68,0.08) !important;
+    border-color: rgba(253,150,68,0.2) !important;
+}
+
+/* Operations */
+.stock-overview-links a[name="get_action_picking_type_ready_moves"] {
+    color: var(--sk-accent-internal) !important;
+}
+.stock-overview-links a[name="get_action_picking_type_ready_moves"]:hover {
+    background: rgba(124,142,247,0.08) !important;
+    border-color: rgba(124,142,247,0.2) !important;
+}
+
+/* Numbers inside links */
+.stock-overview-links .o_field_integer {
+    font-family: 'Space Mono', monospace !important;
+    font-weight: 700 !important;
+    font-size: 0.78rem !important;
+}
+
+/* ---- Graph Widget ---- */
+[name="stock_picking"] .o_field_widget[name="kanban_dashboard_graph"] {
+    margin-top: 16px !important;
+    border-top: 1px solid var(--sk-border) !important;
+    padding-top: 12px !important;
+    opacity: 0.7;
+    transition: opacity var(--sk-transition);
+}
+
+[name="stock_picking"]:hover .o_field_widget[name="kanban_dashboard_graph"] {
+    opacity: 1;
+}
+
+/* ---- Kanban Card Header (dropdown trigger) ---- */
+.o_stock_kanban .o_kanban_card_header {
+    background: transparent !important;
+    border-bottom: none !important;
+    padding: 12px 16px 0 !important;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.o_stock_kanban .o_kanban_manage_toggle_button {
+    color: var(--sk-text-muted) !important;
+    opacity: 0 !important;
+    transition: opacity var(--sk-transition) !important;
+}
+
+.o_stock_kanban .o_kanban_card:hover .o_kanban_manage_toggle_button {
+    opacity: 1 !important;
+}
+
+.o_stock_kanban .o_kanban_manage_toggle_button:hover {
+    color: var(--sk-text-primary) !important;
+}
+
+/* ---- Dropdown Menu ---- */
+.o_stock_kanban .o_kanban_card_manage_pane {
+    background: #1e2235 !important;
+    border: 1px solid var(--sk-border-hover) !important;
+    border-radius: var(--sk-radius-sm) !important;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5) !important;
+    padding: 16px !important;
+}
+
+.o_stock_kanban .o_kanban_card_manage_pane .o_kanban_card_manage_title {
+    color: var(--sk-text-muted) !important;
+    font-size: 0.65rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1.5px !important;
+    font-family: 'Space Mono', monospace !important;
+    margin-bottom: 8px !important;
+}
+
+.o_stock_kanban .o_kanban_card_manage_pane a {
+    color: var(--sk-text-secondary) !important;
+    font-size: 0.82rem !important;
+    display: block;
+    padding: 6px 4px !important;
+    border-radius: 6px !important;
+    transition: all var(--sk-transition) !important;
+    font-family: 'DM Sans', sans-serif !important;
+}
+
+.o_stock_kanban .o_kanban_card_manage_pane a:hover {
+    background: var(--sk-surface-2) !important;
+    color: var(--sk-text-primary) !important;
+    padding-left: 10px !important;
+}
+
+/* ---- Empty State / Ghost Cards ---- */
+.o_stock_kanban .o_kanban_ghost {
+    min-width: 280px !important;
+    max-width: 320px !important;
+}
+
+/* ---- Kanban header/groupby bar ---- */
+.o_stock_kanban .o_control_panel {
+    background: var(--sk-bg) !important;
+    border-bottom: 1px solid var(--sk-border) !important;
+}
+
+/* ---- Scrollbar ---- */
+.o_stock_kanban ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+}
+.o_stock_kanban ::-webkit-scrollbar-track { background: transparent; }
+.o_stock_kanban ::-webkit-scrollbar-thumb {
+    background: var(--sk-border-hover);
+    border-radius: 2px;
+}
+
+/* ---- Favorite star ---- */
+.o_stock_kanban .o_field_boolean_favorite .o_priority_star {
+    color: var(--sk-text-muted) !important;
+    transition: color var(--sk-transition) !important;
+}
+.o_stock_kanban .o_field_boolean_favorite .o_priority_star.fa-star {
+    color: var(--sk-accent-default) !important;
+}
+
+/* ---- Animation on load ---- */
+@keyframes sk-card-in {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.o_stock_kanban .o_kanban_card {
+    animation: sk-card-in 0.4s ease both;
+}
+
+/* Stagger delay via nth-child */
+.o_stock_kanban .o_kanban_card:nth-child(1) { animation-delay: 0.04s; }
+.o_stock_kanban .o_kanban_card:nth-child(2) { animation-delay: 0.08s; }
+.o_stock_kanban .o_kanban_card:nth-child(3) { animation-delay: 0.12s; }
+.o_stock_kanban .o_kanban_card:nth-child(4) { animation-delay: 0.16s; }
+.o_stock_kanban .o_kanban_card:nth-child(5) { animation-delay: 0.20s; }
+.o_stock_kanban .o_kanban_card:nth-child(6) { animation-delay: 0.24s; }
+.o_stock_kanban .o_kanban_card:nth-child(7) { animation-delay: 0.28s; }
+.o_stock_kanban .o_kanban_card:nth-child(8) { animation-delay: 0.32s; }
+
+/* ---- Color variants (color picker) ---- */
+.o_stock_kanban .oe_kanban_color_0  .o_kanban_card { --sk-accent-default: #8b8fa8; }
+.o_stock_kanban .oe_kanban_color_1  .o_kanban_card { --sk-accent-default: #ff6b6b; }
+.o_stock_kanban .oe_kanban_color_2  .o_kanban_card { --sk-accent-default: #fd9644; }
+.o_stock_kanban .oe_kanban_color_3  .o_kanban_card { --sk-accent-default: #f0c040; }
+.o_stock_kanban .oe_kanban_color_4  .o_kanban_card { --sk-accent-default: #00d4aa; }
+.o_stock_kanban .oe_kanban_color_5  .o_kanban_card { --sk-accent-default: #26de81; }
+.o_stock_kanban .oe_kanban_color_6  .o_kanban_card { --sk-accent-default: #7c8ef7; }
+.o_stock_kanban .oe_kanban_color_7  .o_kanban_card { --sk-accent-default: #a29bfe; }
+.o_stock_kanban .oe_kanban_color_8  .o_kanban_card { --sk-accent-default: #fd79a8; }
+.o_stock_kanban .oe_kanban_color_9  .o_kanban_card { --sk-accent-default: #74b9ff; }
+.o_stock_kanban .oe_kanban_color_10 .o_kanban_card { --sk-accent-default: #55efc4; }
+.o_stock_kanban .oe_kanban_color_11 .o_kanban_card { --sk-accent-default: #dfe6e9; }
