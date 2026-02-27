@@ -2,11 +2,7 @@
 
 /**
  * Stock Kanban Redesign - Alphaqueb Consulting
- * Compatible Odoo 19
- *
- * En Odoo 19 el patch de KanbanRecord.prototype con useRef('root') ya no
- * funciona confiablemente. Usamos MutationObserver para detectar tarjetas
- * cuando se renderizan y aplicar mejoras visuales sin tocar OWL.
+ * Compatible Odoo 19 - Tema claro moderno + soporte dark mode nativo
  */
 
 const OPERATION_ICONS = {
@@ -23,271 +19,447 @@ const OPERATION_LABELS = {
     mrp_operation: 'Fabricación',
 };
 
-// ─── CSS completo inyectado vía JS (evita problemas de carga de assets) ───────
 const DYNAMIC_CSS = `
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=Space+Mono:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
 
+/* ── Variables tema claro (default) ────────────────────────────────────────── */
 .o_stock_kanban {
-    --sk-bg:           #0d0f18;
-    --sk-surface:      #161926;
-    --sk-surface-2:    #1e2235;
-    --sk-border:       rgba(255,255,255,0.07);
-    --sk-border-h:     rgba(255,255,255,0.14);
-    --sk-accent:       #f0c040;
-    --sk-inc:          #00d4aa;
-    --sk-out:          #ff6b6b;
-    --sk-int:          #7c8ef7;
-    --sk-mrp:          #fd9644;
-    --sk-text:         #eef0f8;
-    --sk-text2:        #8b8fa8;
-    --sk-muted:        #525670;
-    --sk-r:            16px;
-    --sk-r-sm:         8px;
-    --sk-ease:         0.22s cubic-bezier(0.4,0,0.2,1);
+    --sk-bg:        #eef1f8;
+    --sk-surface:   #ffffff;
+    --sk-surface-2: #f4f6fc;
+    --sk-surface-3: #e8ecf5;
+    --sk-border:    rgba(15,23,42,0.08);
+    --sk-border-h:  rgba(15,23,42,0.16);
+    --sk-accent:    #f59e0b;
+    --sk-inc:       #10b981;
+    --sk-out:       #ef4444;
+    --sk-int:       #6366f1;
+    --sk-mrp:       #f97316;
+    --sk-text:      #0f172a;
+    --sk-text2:     #475569;
+    --sk-muted:     #94a3b8;
+    --sk-shadow:    0 1px 4px rgba(15,23,42,0.06), 0 6px 20px rgba(15,23,42,0.07);
+    --sk-shadow-h:  0 4px 12px rgba(15,23,42,0.1), 0 16px 40px rgba(15,23,42,0.1);
+    --sk-r:         20px;
+    --sk-r-sm:      12px;
+    --sk-ease:      0.2s cubic-bezier(0.4,0,0.2,1);
 }
 
-/* Board */
+/* ── Variables tema oscuro nativo Odoo ─────────────────────────────────────── */
+.o_dark_mode .o_stock_kanban,
+[data-bs-theme="dark"] .o_stock_kanban,
+.o_web_client.o_dark_mode .o_stock_kanban {
+    --sk-bg:        #0f1117;
+    --sk-surface:   #1a1d2e;
+    --sk-surface-2: #222639;
+    --sk-surface-3: #2a2f45;
+    --sk-border:    rgba(255,255,255,0.07);
+    --sk-border-h:  rgba(255,255,255,0.15);
+    --sk-accent:    #fbbf24;
+    --sk-inc:       #34d399;
+    --sk-out:       #f87171;
+    --sk-int:       #818cf8;
+    --sk-mrp:       #fb923c;
+    --sk-text:      #f1f5f9;
+    --sk-text2:     #94a3b8;
+    --sk-muted:     #475569;
+    --sk-shadow:    0 2px 8px rgba(0,0,0,0.4), 0 8px 28px rgba(0,0,0,0.3);
+    --sk-shadow-h:  0 8px 24px rgba(0,0,0,0.5), 0 20px 60px rgba(0,0,0,0.4);
+}
+
+/* ── Board ──────────────────────────────────────────────────────────────────── */
 .o_stock_kanban,
 .o_stock_kanban .o_kanban_renderer,
 .o_stock_kanban .o_renderer {
     background: var(--sk-bg) !important;
-    font-family: 'DM Sans', sans-serif !important;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
 }
 .o_stock_kanban .o_kanban_renderer,
 .o_stock_kanban .o_renderer {
-    padding: 20px !important;
-    gap: 18px !important;
+    padding: 24px !important;
+    gap: 20px !important;
     align-items: flex-start !important;
+    flex-wrap: wrap !important;
 }
 
-/* Tarjeta */
+/* ── Tarjeta ────────────────────────────────────────────────────────────────── */
 .o_stock_kanban .o_kanban_record {
     background: var(--sk-surface) !important;
     border: 1px solid var(--sk-border) !important;
     border-radius: var(--sk-r) !important;
-    box-shadow: 0 6px 24px rgba(0,0,0,0.35) !important;
+    box-shadow: var(--sk-shadow) !important;
     transition: transform var(--sk-ease), box-shadow var(--sk-ease), border-color var(--sk-ease) !important;
-    overflow: hidden !important;
-    width: 290px !important;
-    min-width: 290px !important;
-    max-width: 290px !important;
+    overflow: visible !important;
+    width: 320px !important;
+    min-width: 320px !important;
+    max-width: 320px !important;
     position: relative !important;
     padding: 0 !important;
-    font-family: 'DM Sans', sans-serif !important;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
 }
+
 .o_stock_kanban .o_kanban_record:hover {
-    transform: translateY(-5px) !important;
-    box-shadow: 0 18px 48px rgba(0,0,0,0.55) !important;
+    transform: translateY(-4px) !important;
+    box-shadow: var(--sk-shadow-h) !important;
     border-color: var(--sk-border-h) !important;
 }
 
-/* Línea acento */
+/* Franja lateral de color por tipo */
 .o_stock_kanban .o_kanban_record::before {
     content: '';
     position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 3px;
+    top: 16px; bottom: 16px; left: -1px;
+    width: 4px;
     background: var(--sk-accent);
-    transition: height var(--sk-ease);
+    border-radius: 0 4px 4px 0;
+    transition: top var(--sk-ease), bottom var(--sk-ease);
     z-index: 2;
 }
-.o_stock_kanban .o_kanban_record:hover::before { height: 4px; }
+.o_stock_kanban .o_kanban_record:hover::before { top: 8px; bottom: 8px; }
+
 .o_stock_kanban .o_kanban_record[data-op-type="incoming"]::before      { background: var(--sk-inc); }
 .o_stock_kanban .o_kanban_record[data-op-type="outgoing"]::before      { background: var(--sk-out); }
 .o_stock_kanban .o_kanban_record[data-op-type="internal"]::before      { background: var(--sk-int); }
 .o_stock_kanban .o_kanban_record[data-op-type="mrp_operation"]::before { background: var(--sk-mrp); }
 
-/* Punto verde (listas) */
+/* Punto activo (listas) */
 .o_stock_kanban .o_kanban_record.sk-ready::after {
     content: '';
     position: absolute;
-    top: 12px; right: 14px;
-    width: 7px; height: 7px;
+    top: 14px; right: 16px;
+    width: 8px; height: 8px;
     border-radius: 50%;
     background: var(--sk-inc);
-    box-shadow: 0 0 8px rgba(0,212,170,0.7);
-    animation: sk-blink 2s ease-in-out infinite;
+    box-shadow: 0 0 0 3px rgba(16,185,129,0.15);
+    animation: sk-blink 2.5s ease-in-out infinite;
     z-index: 3;
 }
 
 /* Pulso tardías */
 @keyframes sk-late-pulse {
-    0%,100% { border-color: rgba(255,107,107,0.15); }
-    50%      { border-color: rgba(255,107,107,0.45); }
+    0%,100% { box-shadow: var(--sk-shadow); }
+    50%      { box-shadow: var(--sk-shadow), 0 0 0 2px rgba(239,68,68,0.3); }
 }
 .o_stock_kanban .o_kanban_record.sk-late {
     animation: sk-late-pulse 2.5s ease-in-out infinite !important;
 }
 
 @keyframes sk-blink {
-    0%,100% { opacity:1; }
-    50%      { opacity:0.25; }
+    0%,100% { opacity:1; transform: scale(1); }
+    50%      { opacity:0.4; transform: scale(0.85); }
 }
 
 /* Entrada animada */
 @keyframes sk-in {
-    from { opacity:0; transform:translateY(14px); }
-    to   { opacity:1; transform:translateY(0); }
+    from { opacity:0; transform: translateY(20px) scale(0.97); }
+    to   { opacity:1; transform: translateY(0) scale(1); }
 }
-.o_stock_kanban .o_kanban_record { animation: sk-in 0.35s ease both; }
-.o_stock_kanban .o_kanban_record:nth-child(1){animation-delay:.04s}
-.o_stock_kanban .o_kanban_record:nth-child(2){animation-delay:.08s}
-.o_stock_kanban .o_kanban_record:nth-child(3){animation-delay:.12s}
-.o_stock_kanban .o_kanban_record:nth-child(4){animation-delay:.16s}
-.o_stock_kanban .o_kanban_record:nth-child(5){animation-delay:.20s}
-.o_stock_kanban .o_kanban_record:nth-child(6){animation-delay:.24s}
-.o_stock_kanban .o_kanban_record:nth-child(7){animation-delay:.28s}
-.o_stock_kanban .o_kanban_record:nth-child(8){animation-delay:.32s}
+.o_stock_kanban .o_kanban_record { animation: sk-in 0.4s cubic-bezier(0.34,1.2,0.64,1) both; }
+.o_stock_kanban .o_kanban_record:nth-child(1){animation-delay:.05s}
+.o_stock_kanban .o_kanban_record:nth-child(2){animation-delay:.10s}
+.o_stock_kanban .o_kanban_record:nth-child(3){animation-delay:.15s}
+.o_stock_kanban .o_kanban_record:nth-child(4){animation-delay:.20s}
+.o_stock_kanban .o_kanban_record:nth-child(5){animation-delay:.25s}
+.o_stock_kanban .o_kanban_record:nth-child(6){animation-delay:.30s}
+.o_stock_kanban .o_kanban_record:nth-child(7){animation-delay:.35s}
+.o_stock_kanban .o_kanban_record:nth-child(8){animation-delay:.40s}
+.o_stock_kanban .o_kanban_record:nth-child(9){animation-delay:.45s}
 
-/* Contenido */
+/* ── Contenido interno ──────────────────────────────────────────────────────── */
 .o_stock_kanban .o_kanban_record .o_kanban_record_body,
 .o_stock_kanban .o_kanban_record .o_kanban_card_content,
 .o_stock_kanban [name="stock_picking"] {
-    padding: 18px 18px 14px !important;
+    padding: 22px 22px 18px 26px !important;
     background: transparent !important;
 }
 
-/* Badge tipo (inyectado por JS) */
-.sk-op-badge { display:flex; align-items:center; gap:6px; margin-bottom:10px; }
-.sk-op-icon  { font-size:1rem; line-height:1; }
+/* ── Badge tipo operación (inyectado por JS) ────────────────────────────────── */
+.sk-op-badge {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 12px;
+}
+.sk-op-icon { font-size: 1.05rem; line-height: 1; }
 .sk-op-label {
-    font-family:'Space Mono',monospace;
-    font-size:0.6rem; font-weight:400;
-    text-transform:uppercase; letter-spacing:1.4px;
-    color:var(--sk-muted);
-    background:rgba(255,255,255,0.05);
-    padding:2px 8px; border-radius:20px;
-    border:1px solid rgba(255,255,255,0.07);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.6px;
+    color: var(--sk-muted);
+    background: var(--sk-surface-3);
+    padding: 3px 9px;
+    border-radius: 6px;
+    border: 1px solid var(--sk-border);
+    white-space: nowrap;
 }
 
-/* Nombre */
+/* ── Nombre de la operación ─────────────────────────────────────────────────── */
 .o_stock_kanban .o_kanban_record .fw-bold.fs-4,
 .o_stock_kanban .o_kanban_record a.fw-bold {
-    font-family:'DM Sans',sans-serif !important;
-    font-size:1rem !important; font-weight:700 !important;
-    color:var(--sk-text) !important;
-    text-decoration:none !important;
-    letter-spacing:-0.2px; line-height:1.3; display:block;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    font-size: 1.05rem !important;
+    font-weight: 800 !important;
+    color: var(--sk-text) !important;
+    text-decoration: none !important;
+    letter-spacing: -0.3px;
+    line-height: 1.35;
+    display: block;
+    white-space: normal !important;
+    word-break: break-word;
 }
-.o_stock_kanban .o_kanban_record a.fw-bold:hover { color:#fff !important; }
+.o_stock_kanban .o_kanban_record a.fw-bold:hover {
+    color: var(--sk-int) !important;
+}
 
-/* Warehouse */
-.o_stock_kanban .o_kanban_record [name="warehouse_id"] { display:inline-block !important; margin-top:3px; }
+/* ── Warehouse badge ────────────────────────────────────────────────────────── */
+.o_stock_kanban .o_kanban_record [name="warehouse_id"] {
+    display: inline-flex !important;
+    margin-top: 5px;
+}
 .o_stock_kanban .o_kanban_record [name="warehouse_id"] span,
 .o_stock_kanban .o_kanban_record [name="warehouse_id"] .o_field_char {
-    font-family:'Space Mono',monospace !important; font-size:0.62rem !important;
-    color:var(--sk-muted) !important; text-transform:uppercase; letter-spacing:1px;
-    background:var(--sk-surface-2); padding:2px 8px; border-radius:4px; border:1px solid var(--sk-border);
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 0.62rem !important;
+    color: var(--sk-muted) !important;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    background: var(--sk-surface-2);
+    padding: 3px 9px;
+    border-radius: 6px;
+    border: 1px solid var(--sk-border);
 }
 
-/* Botón principal */
+/* ── Separador ──────────────────────────────────────────────────────────────── */
+.o_stock_kanban [name="stock_picking"] .row.mt-3 {
+    margin-top: 18px !important;
+    padding-top: 16px !important;
+    border-top: 1px solid var(--sk-border) !important;
+    align-items: flex-start;
+}
+
+/* ── Botón principal ─────────────────────────────────────────────────────────── */
 .o_stock_kanban .o_kanban_record .btn.btn-primary {
-    background: linear-gradient(135deg, var(--sk-accent), #d4a520) !important;
-    border:none !important; border-radius:var(--sk-r-sm) !important;
-    color:#0d0f18 !important; font-family:'DM Sans',sans-serif !important;
-    font-size:0.75rem !important; font-weight:700 !important;
-    padding:9px 12px !important; width:100% !important;
-    text-align:center !important; white-space:normal !important;
-    transition:filter var(--sk-ease), transform var(--sk-ease) !important;
-    box-shadow:0 3px 10px rgba(240,192,64,0.22) !important;
-    line-height:1.4 !important;
+    background: var(--sk-accent) !important;
+    border: none !important;
+    border-radius: var(--sk-r-sm) !important;
+    color: #fff !important;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    font-size: 0.78rem !important;
+    font-weight: 700 !important;
+    padding: 10px 14px !important;
+    width: 100% !important;
+    text-align: center !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+    transition: filter var(--sk-ease), transform var(--sk-ease), box-shadow var(--sk-ease) !important;
+    box-shadow: 0 2px 8px rgba(245,158,11,0.25) !important;
+    line-height: 1.45 !important;
+    min-height: 52px;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-direction: column !important;
 }
-.o_stock_kanban .o_kanban_record[data-op-type="incoming"]  .btn.btn-primary { background:linear-gradient(135deg,var(--sk-inc),#00a885) !important; box-shadow:0 3px 10px rgba(0,212,170,0.22) !important; color:#0d0f18 !important; }
-.o_stock_kanban .o_kanban_record[data-op-type="outgoing"]  .btn.btn-primary { background:linear-gradient(135deg,var(--sk-out),#d94f4f) !important; box-shadow:0 3px 10px rgba(255,107,107,0.22) !important; color:#fff !important; }
-.o_stock_kanban .o_kanban_record[data-op-type="internal"]  .btn.btn-primary { background:linear-gradient(135deg,var(--sk-int),#5566d4) !important; box-shadow:0 3px 10px rgba(124,142,247,0.22) !important; color:#fff !important; }
-.o_stock_kanban .o_kanban_record[data-op-type="mrp_operation"] .btn.btn-primary { background:linear-gradient(135deg,var(--sk-mrp),#d07820) !important; box-shadow:0 3px 10px rgba(253,150,68,0.22) !important; color:#0d0f18 !important; }
 
-.o_stock_kanban .o_kanban_record .btn.btn-primary:hover { filter:brightness(1.12) !important; transform:scale(1.02) !important; }
+/* Colores por tipo */
+.o_stock_kanban .o_kanban_record[data-op-type="incoming"]  .btn.btn-primary {
+    background: var(--sk-inc) !important;
+    box-shadow: 0 2px 8px rgba(16,185,129,0.25) !important;
+    color: #fff !important;
+}
+.o_stock_kanban .o_kanban_record[data-op-type="outgoing"]  .btn.btn-primary {
+    background: var(--sk-out) !important;
+    box-shadow: 0 2px 8px rgba(239,68,68,0.25) !important;
+    color: #fff !important;
+}
+.o_stock_kanban .o_kanban_record[data-op-type="internal"]  .btn.btn-primary {
+    background: var(--sk-int) !important;
+    box-shadow: 0 2px 8px rgba(99,102,241,0.25) !important;
+    color: #fff !important;
+}
+.o_stock_kanban .o_kanban_record[data-op-type="mrp_operation"] .btn.btn-primary {
+    background: var(--sk-mrp) !important;
+    box-shadow: 0 2px 8px rgba(249,115,22,0.25) !important;
+    color: #fff !important;
+}
+
+.o_stock_kanban .o_kanban_record .btn.btn-primary:hover {
+    filter: brightness(1.08) !important;
+    transform: scale(1.02) !important;
+}
+
+/* Número grande dentro del botón */
 .o_stock_kanban .o_kanban_record .btn.btn-primary .o_field_integer {
-    font-size:1.2rem !important; font-family:'Space Mono',monospace !important;
-    display:block; margin-bottom:1px;
+    font-size: 1.5rem !important;
+    font-family: 'JetBrains Mono', monospace !important;
+    font-weight: 600 !important;
+    display: block;
+    line-height: 1;
+    margin-bottom: 2px;
 }
 
-/* Stats links */
-.o_stock_kanban .stock-overview-links { display:flex !important; flex-direction:column !important; gap:4px !important; padding-left:6px !important; }
+/* ── Stats links ─────────────────────────────────────────────────────────────── */
+.o_stock_kanban .stock-overview-links {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 3px !important;
+    padding-left: 10px !important;
+}
+
+/* Anular offset Bootstrap */
 .o_stock_kanban .stock-overview-links .col-8.offset-4,
 .o_stock_kanban .stock-overview-links [class*="offset-"] {
-    margin-left:0 !important; max-width:100% !important;
-    width:100% !important; flex:0 0 100% !important; padding:0 !important;
+    margin-left: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    flex: 0 0 100% !important;
+    padding: 0 !important;
 }
+
 .o_stock_kanban .stock-overview-links a {
-    display:flex !important; align-items:center !important;
-    justify-content:space-between !important; text-decoration:none !important;
-    color:var(--sk-text2) !important; font-size:0.73rem !important; font-weight:500 !important;
-    padding:4px 7px !important; border-radius:6px !important;
-    transition:all var(--sk-ease) !important; border:1px solid transparent !important; width:100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    text-decoration: none !important;
+    color: var(--sk-text2) !important;
+    font-size: 0.75rem !important;
+    font-weight: 500 !important;
+    padding: 5px 8px !important;
+    border-radius: 8px !important;
+    transition: all var(--sk-ease) !important;
+    border: 1px solid transparent !important;
+    width: 100% !important;
+    white-space: nowrap !important;
 }
 .o_stock_kanban .stock-overview-links a .row {
-    display:flex !important; width:100% !important;
-    justify-content:space-between !important; align-items:center !important;
-    margin:0 !important; gap:4px;
+    display: flex !important;
+    width: 100% !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    margin: 0 !important;
+    gap: 8px;
+    flex-wrap: nowrap;
 }
-.o_stock_kanban .stock-overview-links a span { font-size:0.71rem !important; }
-.o_stock_kanban .stock-overview-links a:hover { background:var(--sk-surface-2) !important; border-color:var(--sk-border) !important; color:var(--sk-text) !important; }
-
-.o_stock_kanban .stock-overview-links a[name="get_action_picking_tree_waiting"]    { color:#f0c040 !important; }
-.o_stock_kanban .stock-overview-links a[name="get_action_picking_tree_waiting"]:hover  { background:rgba(240,192,64,0.07) !important; border-color:rgba(240,192,64,0.18) !important; }
-.o_stock_kanban .stock-overview-links a[name="get_action_picking_tree_late"]       { color:#ff6b6b !important; }
-.o_stock_kanban .stock-overview-links a[name="get_action_picking_tree_late"]:hover     { background:rgba(255,107,107,0.07) !important; border-color:rgba(255,107,107,0.18) !important; }
-.o_stock_kanban .stock-overview-links a[name="get_action_picking_tree_backorder"]  { color:#fd9644 !important; }
-.o_stock_kanban .stock-overview-links a[name="get_action_picking_tree_backorder"]:hover{ background:rgba(253,150,68,0.07) !important; border-color:rgba(253,150,68,0.18) !important; }
-.o_stock_kanban .stock-overview-links a[name="get_action_picking_type_ready_moves"]{ color:var(--sk-int) !important; }
-.o_stock_kanban .stock-overview-links a[name="get_action_picking_type_ready_moves"]:hover { background:rgba(124,142,247,0.07) !important; border-color:rgba(124,142,247,0.18) !important; }
-
-.o_stock_kanban .stock-overview-links .o_field_integer span,
-.o_stock_kanban .stock-overview-links .o_field_integer {
-    font-family:'Space Mono',monospace !important; font-size:0.7rem !important; font-weight:700 !important;
-    background:rgba(255,255,255,0.07); padding:1px 5px; border-radius:4px;
+.o_stock_kanban .stock-overview-links a span.col-6 {
+    font-size: 0.73rem !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.o_stock_kanban .stock-overview-links a:hover {
+    background: var(--sk-surface-2) !important;
+    border-color: var(--sk-border) !important;
+    color: var(--sk-text) !important;
 }
 
-/* Gráfico */
+/* Colores semánticos */
+.o_stock_kanban .stock-overview-links a[name="get_action_picking_tree_waiting"]        { color: #d97706 !important; }
+.o_stock_kanban .stock-overview-links a[name="get_action_picking_tree_waiting"]:hover  { background: rgba(245,158,11,0.08) !important; border-color: rgba(245,158,11,0.2) !important; }
+.o_stock_kanban .stock-overview-links a[name="get_action_picking_tree_late"]           { color: var(--sk-out) !important; }
+.o_stock_kanban .stock-overview-links a[name="get_action_picking_tree_late"]:hover     { background: rgba(239,68,68,0.08) !important; border-color: rgba(239,68,68,0.2) !important; }
+.o_stock_kanban .stock-overview-links a[name="get_action_picking_tree_backorder"]      { color: var(--sk-mrp) !important; }
+.o_stock_kanban .stock-overview-links a[name="get_action_picking_tree_backorder"]:hover{ background: rgba(249,115,22,0.08) !important; border-color: rgba(249,115,22,0.2) !important; }
+.o_stock_kanban .stock-overview-links a[name="get_action_picking_type_ready_moves"]    { color: var(--sk-int) !important; }
+.o_stock_kanban .stock-overview-links a[name="get_action_picking_type_ready_moves"]:hover{ background: rgba(99,102,241,0.08) !important; border-color: rgba(99,102,241,0.2) !important; }
+
+/* Número en stats */
+.o_stock_kanban .stock-overview-links .o_field_integer,
+.o_stock_kanban .stock-overview-links .o_field_integer span {
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 0.72rem !important;
+    font-weight: 600 !important;
+    background: var(--sk-surface-3);
+    padding: 1px 6px;
+    border-radius: 5px;
+    border: 1px solid var(--sk-border);
+    color: var(--sk-text) !important;
+    min-width: 24px;
+    text-align: center;
+    display: inline-block;
+}
+
+/* ── Gráfico ─────────────────────────────────────────────────────────────────── */
 .o_stock_kanban .o_kanban_record [name="kanban_dashboard_graph"] {
-    margin-top:14px !important; border-top:1px solid var(--sk-border) !important;
-    padding-top:10px !important; opacity:0.65; transition:opacity var(--sk-ease);
+    margin-top: 16px !important;
+    border-top: 1px solid var(--sk-border) !important;
+    padding-top: 12px !important;
+    opacity: 0.7;
+    transition: opacity var(--sk-ease);
 }
-.o_stock_kanban .o_kanban_record:hover [name="kanban_dashboard_graph"] { opacity:1; }
+.o_stock_kanban .o_kanban_record:hover [name="kanban_dashboard_graph"] { opacity: 1; }
 
-/* Header record / menú toggle */
-.o_stock_kanban .o_kanban_record .o_kanban_record_header { background:transparent !important; border-bottom:none !important; padding:10px 14px 0 !important; }
+/* ── Header / botón menú ─────────────────────────────────────────────────────── */
+.o_stock_kanban .o_kanban_record .o_kanban_record_header {
+    background: transparent !important;
+    border-bottom: none !important;
+    padding: 12px 14px 0 !important;
+}
 .o_stock_kanban .o_kanban_manage_toggle_button,
-.o_stock_kanban .o_kanban_record_header .o_dropdown_caret { color:var(--sk-muted) !important; opacity:0 !important; transition:opacity var(--sk-ease) !important; }
+.o_stock_kanban .o_kanban_record_header .o_dropdown_caret {
+    color: var(--sk-muted) !important;
+    opacity: 0 !important;
+    transition: opacity var(--sk-ease) !important;
+}
 .o_stock_kanban .o_kanban_record:hover .o_kanban_manage_toggle_button,
-.o_stock_kanban .o_kanban_record:hover .o_dropdown_caret { opacity:1 !important; }
+.o_stock_kanban .o_kanban_record:hover .o_dropdown_caret { opacity: 1 !important; }
 
-/* Dropdown */
+/* ── Dropdown menú ───────────────────────────────────────────────────────────── */
 .o_stock_kanban .o_kanban_card_manage_pane,
 .o_stock_kanban .o-dropdown--menu {
-    background:#1c2030 !important; border:1px solid var(--sk-border-h) !important;
-    border-radius:var(--sk-r-sm) !important; box-shadow:0 16px 48px rgba(0,0,0,0.5) !important; padding:14px !important;
+    background: var(--sk-surface) !important;
+    border: 1px solid var(--sk-border-h) !important;
+    border-radius: var(--sk-r-sm) !important;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.12) !important;
+    padding: 12px !important;
 }
 .o_stock_kanban .o_kanban_card_manage_pane .o_kanban_card_manage_title {
-    color:var(--sk-muted) !important; font-size:0.6rem !important;
-    text-transform:uppercase !important; letter-spacing:1.5px !important;
-    font-family:'Space Mono',monospace !important; margin-bottom:6px !important;
+    color: var(--sk-muted) !important;
+    font-size: 0.6rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1.5px !important;
+    font-family: 'JetBrains Mono', monospace !important;
+    margin-bottom: 6px !important;
 }
 .o_stock_kanban .o_kanban_card_manage_pane a,
 .o_stock_kanban .o-dropdown--menu a {
-    color:var(--sk-text2) !important; font-size:0.8rem !important; display:block;
-    padding:5px 6px !important; border-radius:5px !important;
-    transition:all var(--sk-ease) !important; font-family:'DM Sans',sans-serif !important; text-decoration:none !important;
+    color: var(--sk-text2) !important;
+    font-size: 0.82rem !important;
+    display: block;
+    padding: 6px 8px !important;
+    border-radius: 7px !important;
+    transition: all var(--sk-ease) !important;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    text-decoration: none !important;
 }
 .o_stock_kanban .o_kanban_card_manage_pane a:hover,
-.o_stock_kanban .o-dropdown--menu a:hover { background:var(--sk-surface-2) !important; color:var(--sk-text) !important; padding-left:12px !important; }
+.o_stock_kanban .o-dropdown--menu a:hover {
+    background: var(--sk-surface-2) !important;
+    color: var(--sk-text) !important;
+    padding-left: 14px !important;
+}
 
-/* Control panel */
-.o_stock_kanban .o_control_panel { background:var(--sk-bg) !important; border-bottom:1px solid var(--sk-border) !important; }
+/* ── Control panel ───────────────────────────────────────────────────────────── */
+.o_stock_kanban .o_control_panel {
+    background: var(--sk-bg) !important;
+    border-bottom: 1px solid var(--sk-border) !important;
+}
 
-/* Scrollbar */
-.o_stock_kanban ::-webkit-scrollbar { width:3px; height:3px; }
-.o_stock_kanban ::-webkit-scrollbar-track { background:transparent; }
-.o_stock_kanban ::-webkit-scrollbar-thumb { background:var(--sk-border-h); border-radius:2px; }
+/* ── Scrollbar ───────────────────────────────────────────────────────────────── */
+.o_stock_kanban ::-webkit-scrollbar { width: 4px; height: 4px; }
+.o_stock_kanban ::-webkit-scrollbar-track { background: transparent; }
+.o_stock_kanban ::-webkit-scrollbar-thumb { background: var(--sk-border-h); border-radius: 2px; }
 
-/* Favorito */
-.o_stock_kanban .o_priority_star { color:var(--sk-muted) !important; }
-.o_stock_kanban .o_priority_star.fa-star { color:var(--sk-accent) !important; }
+/* ── Favorito ────────────────────────────────────────────────────────────────── */
+.o_stock_kanban .o_priority_star { color: var(--sk-muted) !important; }
+.o_stock_kanban .o_priority_star.fa-star { color: var(--sk-accent) !important; }
 
-/* Ghost */
-.o_stock_kanban .o_kanban_ghost { min-width:290px !important; max-width:290px !important; }
+/* ── Ghost ───────────────────────────────────────────────────────────────────── */
+.o_stock_kanban .o_kanban_ghost {
+    min-width: 320px !important;
+    max-width: 320px !important;
+}
 `;
 
 function injectDynamicStyles() {
@@ -303,32 +475,26 @@ function enhanceCard(card) {
     if (card.dataset.skDone) return;
     card.dataset.skDone = '1';
 
-    // Obtener code del tipo de operación
-    // Odoo 19: el campo invisible "code" puede estar en un span oculto o en data
     let code = '';
     const codeEl = card.querySelector('[name="code"]');
     if (codeEl) code = codeEl.textContent.trim();
 
-    // Fallback: inferir del texto del botón CTA
     if (!code) {
         const btnTxt = card.querySelector('.btn.btn-primary')?.textContent || '';
-        if (/receiv|recib/i.test(btnTxt))       code = 'incoming';
-        else if (/deliver|entreg/i.test(btnTxt)) code = 'outgoing';
-        else if (/process|procesar|transfer/i.test(btnTxt)) code = 'internal';
+        if (/receiv|recib/i.test(btnTxt))                    code = 'incoming';
+        else if (/deliver|entreg/i.test(btnTxt))             code = 'outgoing';
+        else if (/process|procesar|transfer|intern/i.test(btnTxt)) code = 'internal';
     }
 
     if (code) card.setAttribute('data-op-type', code);
 
-    // Contadores
-    const late  = parseInt(card.querySelector('[name="count_picking_late"] span')?.textContent || '0', 10);
+    const late  = parseInt(card.querySelector('[name="count_picking_late"] span')?.textContent  || '0', 10);
     const ready = parseInt(card.querySelector('[name="count_picking_ready"] span')?.textContent || '0', 10);
     if (late  > 0) card.classList.add('sk-late');
     if (ready > 0) card.classList.add('sk-ready');
 
-    // Badge
     injectBadge(card, code);
 
-    // Tooltip
     const name = card.querySelector('.fw-bold.fs-4, a.fw-bold')?.textContent.trim() || '';
     if (name) {
         let tip = name;
@@ -361,7 +527,7 @@ function observeKanban() {
                 if (node.classList?.contains('o_kanban_record')) {
                     enhanceCard(node);
                 } else {
-                    node.querySelectorAll?.('.o_stock_kanban .o_kanban_record, .o_kanban_record').forEach(c => {
+                    node.querySelectorAll?.('.o_kanban_record').forEach(c => {
                         if (c.closest('.o_stock_kanban')) enhanceCard(c);
                     });
                 }
