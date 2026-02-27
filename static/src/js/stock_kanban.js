@@ -376,11 +376,14 @@ function processExisting() {
 }
 
 // ─── Init ────────────────────────────────────────────────────────────────────
-injectDynamicStyles();
-observeKanban();
-
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', processExisting);
-} else {
+function init() {
+    injectDynamicStyles();
+    observeKanban();
     setTimeout(processExisting, 350);
+}
+
+if (document.body) {
+    init();
+} else {
+    document.addEventListener('DOMContentLoaded', init);
 }
