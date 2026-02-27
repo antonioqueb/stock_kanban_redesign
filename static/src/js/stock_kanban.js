@@ -45,10 +45,9 @@ const DYNAMIC_CSS = `
     --sk-ease:      0.2s cubic-bezier(0.4,0,0.2,1);
 }
 
-/* ── Variables tema oscuro nativo Odoo ─────────────────────────────────────── */
-.o_dark_mode .o_stock_kanban,
-[data-bs-theme="dark"] .o_stock_kanban,
-.o_web_client.o_dark_mode .o_stock_kanban {
+/* ── Variables tema oscuro nativo Odoo 17/18/19 ────────────────────────────── */
+/* Odoo aplica la clase o_dark al <html> cuando el usuario activa dark mode   */
+html.o_dark .o_stock_kanban {
     --sk-bg:        #0f1117;
     --sk-surface:   #1a1d2e;
     --sk-surface-2: #222639;
@@ -545,10 +544,35 @@ function processExisting() {
     document.querySelectorAll('.o_stock_kanban .o_kanban_record').forEach(enhanceCard);
 }
 
+// ─── Observer para cambios de tema claro/oscuro en tiempo real ───────────────
+// Odoo 17/18/19 agrega/quita la clase `o_dark` en el <html> al cambiar tema.
+// El CSS ya maneja el cambio de variables via html.o_dark selector,
+// pero las tarjetas ya procesadas necesitan re-procesar sus clases de estado.
+function observeThemeChange() {
+    const htmlEl = document.documentElement;
+    let wasDark = htmlEl.classList.contains('o_dark');
+
+    const themeObserver = new MutationObserver(() => {
+        const isDark = htmlEl.classList.contains('o_dark');
+        if (isDark !== wasDark) {
+            wasDark = isDark;
+            // Re-procesar tarjetas para actualizar clases de estado si es necesario
+            // El CSS se actualiza solo via variables, esto es solo por si acaso
+            document.querySelectorAll('.o_stock_kanban .o_kanban_record[data-sk-done]')
+                .forEach(card => {
+                    // noop - el CSS lo maneja solo con variables
+                });
+        }
+    });
+
+    themeObserver.observe(htmlEl, { attributes: true, attributeFilter: ['class'] });
+}
+
 // ─── Init ────────────────────────────────────────────────────────────────────
 function init() {
     injectDynamicStyles();
     observeKanban();
+    observeThemeChange();
     setTimeout(processExisting, 350);
 }
 
